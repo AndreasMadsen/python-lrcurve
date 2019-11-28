@@ -1,0 +1,28 @@
+{
+  "name": "lrcurve",
+  "version": "1.0.0",
+  "description": "Real-time learning curve for Jupiter notebooks",
+  "main": "index.js",
+  "private": true,
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build": "browserify lrcurve/web_assets/d3.js -o lrcurve/web_assets/d3.bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndreasMadsen/lrcurve.git"
+  },
+  "author": "Andreas Madsen",
+  "license": "MIT",
+  "dependencies": {
+    "browserify": "^16.5.0",
+    "d3-array": "^2.4.0",
+    "d3-axis": "^1.0.12",
+    "d3-scale": "^3.2.1",
+    "d3-selection": "^1.4.1",
+    "d3-shape": "^1.3.7",
+    "d3-transition": "^1.3.2"
+  }
+}
