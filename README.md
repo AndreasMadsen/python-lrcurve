@@ -10,6 +10,8 @@ that works well with PyTorch and Tensorflow and a keras wrapper
 `lrcurve` works with python 3.6 or newer and is distributed under the
 MIT license.
 
+![Gif of learning-curve](gifs/readme_header.gif)
+
 ## Install
 
 ```bash
