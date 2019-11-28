@@ -116,3 +116,7 @@ plot.finalize()
 ```
 
 ![Gif of learning-curve for pytorch example](gifs/pytorch_example.gif)
+
+## Sponsor
+
+Sponsored by <a href="https://www.nearform.com/research/">NearForm Research</a>.
