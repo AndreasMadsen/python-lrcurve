@@ -10,6 +10,12 @@ that works well with PyTorch and Tensorflow and a keras wrapper
 `lrcurve` works with python 3.6 or newer and is distributed under the
 MIT license.
 
+## Install
+
+```bash
+pip install -U lrcurve
+```
+
 ## API
 
 * [`lrcurve.PlotLearningCurve`](lrcurve/plot_learning_curve.py)
