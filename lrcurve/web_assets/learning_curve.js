@@ -246,7 +246,10 @@
 
       this._container = d3.select(container)
       .classed('learning-curve', true)
+      .style('height', `${height}px`)
+      .style('width', `${width}px`)
       .attr('height', height)
+      .attr('width', width)
       .attr('xmlns:xlink', 'http://www.w3.org/1999/xlink');
 
       // Create a SubGraph for each facet
