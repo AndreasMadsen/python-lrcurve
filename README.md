@@ -22,7 +22,7 @@ MIT license.
 * [PyTorch example](#pytorch-example)
 
 ### Keras example
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/lrcurve/blob/master/notebooks/keras_example.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/python-lrcurve/blob/master/notebooks/keras_example.ipynb)
 
 ```python
 from lrcurve import KerasLearningCurve
@@ -41,7 +41,7 @@ model.fit(train.x, train.y,
 ![Gif of learning-curve for keras example](gifs/keras_example.gif)
 
 ### Framework agnostic example
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/lrcurve/blob/master/notebooks/emulated_training.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/python-lrcurve/blob/master/notebooks/emulated_training.ipynb)
 
 ```python
 plot = PlotLearningCurve()
@@ -62,7 +62,7 @@ plot.finalize()
 ![Gif of learning-curve for simple example](gifs/simple_example.gif)
 
 ### PyTorch example
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/lrcurve/blob/master/notebooks/pytorch_example.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/python-lrcurve/blob/master/notebooks/pytorch_example.ipynb)
 
 ```python
 from lrcurve import PlotLearningCurve
