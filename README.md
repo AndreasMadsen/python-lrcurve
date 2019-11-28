@@ -12,8 +12,8 @@ MIT license.
 
 ## API
 
-* [`lrcurve.PlotLearningCurve`](lrcurve/plot_learning_curve.md)
-* [`lrcurve.KerasLearningCurve`](lrcurve/keras_learning_curve.md)
+* [`lrcurve.PlotLearningCurve`](lrcurve/plot_learning_curve.py)
+* [`lrcurve.KerasLearningCurve`](lrcurve/keras_learning_curve.py)
 
 ## Examples
 
