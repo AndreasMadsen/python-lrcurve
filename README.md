@@ -70,7 +70,7 @@ from lrcurve import PlotLearningCurve
 plot = PlotLearningCurve(
     facet_config = {
         'loss': { 'name': 'Cross-Entropy', 'limit': [0, None] },
-        'accuacy': { 'name': 'Accuacy', 'limit': [0, 1] }
+        'accuracy': { 'name': 'Accuracy', 'limit': [0, 1] }
     },
     xaxis_config = { 'name': 'Epoch', 'limit': [0, 500] }
 )
@@ -97,7 +97,7 @@ for epoch in range(500):
             'train': loss_train,
             'validation': loss_test
         },
-        'accuacy': {
+        'accuracy': {
             'train': accuacy_train,
             'validation': accuacy_test
         }
