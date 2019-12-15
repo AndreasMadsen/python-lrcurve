@@ -1964,7 +1964,7 @@ typeof define === 'function' && define.amd ? define(['exports'], factory) :
 // significant digits p, where x is positive and p is in [1, 21] or undefined.
 // For example, formatDecimal(1.23) returns ["123", 0].
 function formatDecimal(x, p) {
-  if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, ±Infinity
+  if ((i = (x = p ? x.toExponential(p - 1) : x.toExponential()).indexOf("e")) < 0) return null; // NaN, +/-Infinity
   var i, coefficient = x.slice(0, i);
 
   // The string returned by toExponential either has the form \d\.\d+e[-+]\d+
@@ -2112,7 +2112,7 @@ function identity(x) {
 }
 
 var map = Array.prototype.map,
-    prefixes = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
+    prefixes = ["y","z","a","f","p","n","u","m","","k","M","G","T","P","E","Z","Y"];
 
 function formatLocale(locale) {
   var group = locale.grouping === undefined || locale.thousands === undefined ? identity : formatGroup(map.call(locale.grouping, Number), locale.thousands + ""),
@@ -2192,8 +2192,8 @@ function formatLocale(locale) {
 
         valueSuffix = (type === "s" ? prefixes[8 + prefixExponent / 3] : "") + valueSuffix + (valueNegative && sign === "(" ? ")" : "");
 
-        // Break the formatted value into the integer “value” part that can be
-        // grouped, and fractional or exponential “suffix” part that is not.
+        // Break the formatted value into the integer "value" part that can be
+        // grouped, and fractional or exponential "suffix" part that is not.
         if (maybeSuffix) {
           i = -1, n = value.length;
           while (++i < n) {
@@ -2724,7 +2724,7 @@ function zoom(p0, p1) {
       i,
       S;
 
-  // Special case for u0 ≅ u1.
+  // Special case for u0  u1.
   if (d2 < epsilon2) {
     S = Math.log(w1 / w0) / rho;
     i = function(t) {
@@ -3000,7 +3000,7 @@ Path.prototype = path.prototype = {
       this._ += "L" + x0 + "," + y0;
     }
 
-    // Is this arc empty? We’re done.
+    // Is this arc empty? We're done.
     if (!r) return;
 
     // Does the angle go the wrong way? Flip the direction.
@@ -4446,7 +4446,7 @@ function constant(x) {
   };
 }
 
-var keyPrefix = "$"; // Protect against keys like “__proto__”.
+var keyPrefix = "$"; // Protect against keys like "__proto__".
 
 function bindIndex(parent, group, enter, update, exit, data) {
   var i = 0,
@@ -4466,7 +4466,7 @@ function bindIndex(parent, group, enter, update, exit, data) {
     }
   }
 
-  // Put any non-null nodes that don’t fit into exit.
+  // Put any non-null nodes that don't fit into exit.
   for (; i < groupLength; ++i) {
     if (node = group[i]) {
       exit[i] = node;
@@ -5453,7 +5453,7 @@ function arc() {
           t0,
           t1;
 
-      // Apply padding? Note that since r1 ≥ r0, da1 ≥ da0.
+      // Apply padding? Note that since r1 >= r0, da1 >= da0.
       if (rp > epsilon) {
         var p0 = asin(rp / r0 * sin(ap)),
             p1 = asin(rp / r1 * sin(ap));
@@ -5492,7 +5492,7 @@ function arc() {
       // Is the sector collapsed to a line?
       if (!(da1 > epsilon)) context.moveTo(x01, y01);
 
-      // Does the sector’s outer ring have rounded corners?
+      // Does the sector's outer ring have rounded corners?
       else if (rc1 > epsilon) {
         t0 = cornerTangents(x00, y00, x01, y01, r1, rc1, cw);
         t1 = cornerTangents(x11, y11, x10, y10, r1, rc1, cw);
@@ -5513,11 +5513,11 @@ function arc() {
       // Or is the outer ring just a circular arc?
       else context.moveTo(x01, y01), context.arc(0, 0, r1, a01, a11, !cw);
 
-      // Is there no inner ring, and it’s a circular sector?
-      // Or perhaps it’s an annular sector collapsed due to padding?
+      // Is there no inner ring, and it's a circular sector?
+      // Or perhaps it's an annular sector collapsed due to padding?
       if (!(r0 > epsilon) || !(da0 > epsilon)) context.lineTo(x10, y10);
 
-      // Does the sector’s inner ring (or point) have rounded corners?
+      // Does the sector's inner ring (or point) have rounded corners?
       else if (rc0 > epsilon) {
         t0 = cornerTangents(x10, y10, x11, y11, r0, -rc0, cw);
         t1 = cornerTangents(x01, y01, x00, y00, r0, -rc0, cw);
@@ -6806,7 +6806,7 @@ function slope2(that, t) {
 }
 
 // According to https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Representations
-// "you can express cubic Hermite interpolation in terms of cubic Bézier curves
+// "you can express cubic Hermite interpolation in terms of cubic B'ezier curves
 // with respect to the four values p0, p0 + m0 / 3, p1 - m1 / 3, p1".
 function point$3(that, t0, t1) {
   var x0 = that._x0,
@@ -8392,7 +8392,7 @@ function timer(callback, delay, time) {
 
 function timerFlush() {
   now(); // Get the current time, if not already set.
-  ++frame; // Pretend we’ve set an alarm, if we haven’t already.
+  ++frame; // Pretend we've set an alarm, if we haven't already.
   var t = taskHead, e;
   while (t) {
     if ((e = clockNow - t._time) >= 0) t._call.call(null, e);
@@ -8673,7 +8673,7 @@ function tweenRemove(id, name) {
         tween = schedule.tween;
 
     // If this node shared tween with the previous node,
-    // just assign the updated shared tween and we’re done!
+    // just assign the updated shared tween and we're done!
     // Otherwise, copy-on-write.
     if (tween !== tween0) {
       tween1 = tween0 = tween;
@@ -8698,7 +8698,7 @@ function tweenFunction(id, name, value) {
         tween = schedule.tween;
 
     // If this node shared tween with the previous node,
-    // just assign the updated shared tween and we’re done!
+    // just assign the updated shared tween and we're done!
     // Otherwise, copy-on-write.
     if (tween !== tween0) {
       tween1 = (tween0 = tween).slice();
@@ -8977,7 +8977,7 @@ function onFunction(id, name, listener) {
         on = schedule.on;
 
     // If this node shared a dispatch with the previous node,
-    // just assign the updated shared dispatch and we’re done!
+    // just assign the updated shared dispatch and we're done!
     // Otherwise, copy-on-write.
     if (on !== on0) (on1 = (on0 = on).copy()).on(name, listener);
 
@@ -9107,7 +9107,7 @@ function styleMaybeRemove(id, name) {
         listener = schedule.value[key] == null ? remove || (remove = styleRemove(name)) : undefined;
 
     // If this node shared a dispatch with the previous node,
-    // just assign the updated shared dispatch and we’re done!
+    // just assign the updated shared dispatch and we're done!
     // Otherwise, copy-on-write.
     if (on !== on0 || listener0 !== listener) (on1 = (on0 = on).copy()).on(event, listener0 = listener);
 
@@ -9230,7 +9230,7 @@ function transition_end() {
           on = schedule.on;
 
       // If this node shared a dispatch with the previous node,
-      // just assign the updated shared dispatch and we’re done!
+      // just assign the updated shared dispatch and we're done!
       // Otherwise, copy-on-write.
       if (on !== on0) {
         on1 = (on0 = on).copy();

@@ -8,7 +8,7 @@
     "example": "examples"
   },
   "scripts": {
-    "build": "browserify lrcurve/web_assets/d3.js -o lrcurve/web_assets/d3.bundle.js"
+    "build": "browserify lrcurve/web_assets/d3.js | iconv -f UTF-8 -t ASCII//TRANSLIT//IGNORE > lrcurve/web_assets/d3.bundle.js"
   },
   "repository": {
     "type": "git",
