@@ -41,6 +41,39 @@ def test_crude_sanity_check():
 
     assert_equal(len(display_objects), 6)
 
+def test_with_scope():
+    # Unfortunetly the notebooks are really the best way to test if
+    # things are working.
+    display_objects = []
+    with PlotLearningCurve(display_fn=display_replacer(display_objects)) as plot:
+        for i in range(1, 10):
+            plot.append(i, {
+                'loss': {
+                    'train': i * 10 + 1,
+                    'validation': i * 10
+                }
+            })
+        plot.draw()
+
+    assert_equal(len(display_objects), 5)
+
+def test_with_scope_extern():
+    # Unfortunetly the notebooks are really the best way to test if
+    # things are working.
+    display_objects = []
+    plot = PlotLearningCurve(display_fn=display_replacer(display_objects))
+    with plot:
+        for i in range(1, 10):
+            plot.append(i, {
+                'loss': {
+                    'train': i * 10 + 1,
+                    'validation': i * 10
+                }
+            })
+        plot.draw()
+
+    assert_equal(len(display_objects), 5)
+
 @raises(ValueError)
 def test_height_is_string():
     PlotLearningCurve(

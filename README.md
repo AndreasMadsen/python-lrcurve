@@ -52,19 +52,16 @@ model.fit(train.x, train.y,
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AndreasMadsen/python-lrcurve/blob/master/notebooks/emulated_training.ipynb)
 
 ```python
-plot = PlotLearningCurve()
-
-for i in range(100):
-    plot.append(i, {
-        'loss': {
-            'train': math.exp(-(i+1)/10),
-            'validation': math.exp(-i/10)
-        }
-    })
-    plot.draw()
-    time.sleep(0.1)
-
-plot.finalize()
+with PlotLearningCurve() as plot:
+    for i in range(100):
+        plot.append(i, {
+            'loss': {
+                'train': math.exp(-(i+1)/10),
+                'validation': math.exp(-i/10)
+            }
+        })
+        plot.draw()
+        time.sleep(0.1)
 ```
 
 ![Gif of learning-curve for simple example](gifs/simple_example.gif)
@@ -83,36 +80,35 @@ plot = PlotLearningCurve(
     xaxis_config = { 'name': 'Epoch', 'limit': [0, 500] }
 )
 
-# optimize model
-for epoch in range(500):
-    # compute loss
-    z_test = network(x_test)
-    loss_test = criterion(z_test, y_test)
+with plot:
+    # optimize model
+    for epoch in range(500):
+        # compute loss
+        z_test = network(x_test)
+        loss_test = criterion(z_test, y_test)
 
-    optimizer.zero_grad()
-    z_train = network(x_train)
-    loss_train = criterion(z_train, y_train)
-    loss_train.backward()
-    optimizer.step()
+        optimizer.zero_grad()
+        z_train = network(x_train)
+        loss_train = criterion(z_train, y_train)
+        loss_train.backward()
+        optimizer.step()
 
-    # compute accuacy
-    accuacy_test = sklearn.metrics.accuracy_score(torch.argmax(z_test, 1).numpy(), y_test)
-    accuacy_train = sklearn.metrics.accuracy_score(torch.argmax(z_train, 1).numpy(), y_train)
+        # compute accuacy
+        accuacy_test = sklearn.metrics.accuracy_score(torch.argmax(z_test, 1).numpy(), y_test)
+        accuacy_train = sklearn.metrics.accuracy_score(torch.argmax(z_train, 1).numpy(), y_train)
 
-    # append and update
-    plot.append(epoch, {
-        'loss': {
-            'train': loss_train,
-            'validation': loss_test
-        },
-        'accuracy': {
-            'train': accuacy_train,
-            'validation': accuacy_test
-        }
-    })
-    plot.draw()
-
-plot.finalize()
+        # append and update
+        plot.append(epoch, {
+            'loss': {
+                'train': loss_train,
+                'validation': loss_test
+            },
+            'accuracy': {
+                'train': accuacy_train,
+                'validation': accuacy_test
+            }
+        })
+        plot.draw()
 ```
 
 ![Gif of learning-curve for pytorch example](gifs/pytorch_example.gif)

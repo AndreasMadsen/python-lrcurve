@@ -134,6 +134,12 @@ class PlotLearningCurve:
             display_id=True
         )
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.finalize()
+
     def _create_inital_html(self):
         with open(path.join(web_assets_dir, 'd3.bundle.js')) as d3_fp, \
              open(path.join(web_assets_dir, 'learning_curve.css')) as css_fp, \
