@@ -54,12 +54,15 @@ class KerasLearningCurve(keras.callbacks.Callback):
         self._kwargs = kwargs
         self._plotter = None
 
-    def on_train_begin(self, logs=None):
+    def _setup_plotter(self, metrics_names):
+        do_validation = False
+
         # Set the metric mapping, if not specified
         if self._metric_mapping is None:
             self._metric_mapping = {}
-            for metric_name in self.params['metrics']:
-                if self.params['do_validation'] and metric_name.startswith('val_'):
+            for metric_name in metrics_names:
+                if metric_name.startswith('val_'):
+                    do_validation = True
                     self._metric_mapping[metric_name] = {
                         'facet': metric_name[4:],
                         'line': 'validation'
@@ -88,7 +91,7 @@ class KerasLearningCurve(keras.callbacks.Callback):
             self._kwargs['line_config'] = {
                 'train': { 'name': 'Train', 'color': '#F8766D' }
             }
-            if self.params['do_validation']:
+            if do_validation:
                 self._kwargs['line_config']['validation'] = \
                     {'name': 'Validation', 'color': '#00BFC4' }
 
@@ -112,6 +115,9 @@ class KerasLearningCurve(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
 
+        if self._plotter is None:
+            self._setup_plotter(logs.keys())
+
         # restructure logs data to nested dicts and append
         row = { facet_key: dict() for facet_key in self._facet_keys }
         for metric_name, metric_assigment in self._metric_mapping.items():
@@ -124,4 +130,5 @@ class KerasLearningCurve(keras.callbacks.Callback):
             self._plotter.draw()
 
     def on_train_end(self, logs=None):
-        self._plotter.finalize()
+        if self._plotter is not None:
+            self._plotter.finalize()
