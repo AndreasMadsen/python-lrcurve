@@ -22,24 +22,21 @@ def test_crude_sanity_check():
     plot = PlotLearningCurve(display_fn=display_replacer(display_objects))
 
     plot.append(0, {
-        'loss': {
-            'train': 1, 'validation': 0
-        }
+        'loss': 1,
+        'val_loss': 0
     })
     plot.draw()
 
     for i in range(1, 10):
         plot.append(i, {
-            'loss': {
-                'train': i * 10 + 1,
-                'validation': i * 10
-            }
+            'loss': i * 10 + 1,
+            'val_loss': i * 10
         })
     plot.draw()
 
     plot.finalize()
 
-    assert_equal(len(display_objects), 6)
+    assert_equal(len(display_objects), 7)
 
 def test_with_scope():
     # Unfortunetly the notebooks are really the best way to test if
@@ -48,14 +45,12 @@ def test_with_scope():
     with PlotLearningCurve(display_fn=display_replacer(display_objects)) as plot:
         for i in range(1, 10):
             plot.append(i, {
-                'loss': {
-                    'train': i * 10 + 1,
-                    'validation': i * 10
-                }
+                'loss': i * 10 + 1,
+                'val_loss': i * 10
             })
         plot.draw()
 
-    assert_equal(len(display_objects), 5)
+    assert_equal(len(display_objects), 6)
 
 def test_with_scope_extern():
     # Unfortunetly the notebooks are really the best way to test if
@@ -65,14 +60,12 @@ def test_with_scope_extern():
     with plot:
         for i in range(1, 10):
             plot.append(i, {
-                'loss': {
-                    'train': i * 10 + 1,
-                    'validation': i * 10
-                }
+                'loss': i * 10 + 1,
+                'val_loss': i * 10
             })
         plot.draw()
 
-    assert_equal(len(display_objects), 5)
+    assert_equal(len(display_objects), 6)
 
 @raises(ValueError)
 def test_height_is_string():
@@ -89,6 +82,27 @@ def test_width_is_string():
     )
 
 @raises(ValueError)
+def mappings_config_is_not_dict():
+    PlotLearningCurve(
+        mappings='string',
+        display_fn=display_replacer([])
+    )
+
+@raises(ValueError)
+def mappings_config_is_missing_facet():
+    PlotLearningCurve(
+        mappings={ 'loss': { 'line': 'train' } },
+        display_fn=display_replacer([])
+    )
+
+@raises(ValueError)
+def mappings_config_is_missing_line():
+    PlotLearningCurve(
+        mappings={ 'loss': { 'facet': 'loss' } },
+        display_fn=display_replacer([])
+    )
+
+@raises(ValueError)
 def test_line_config_is_not_dict():
     PlotLearningCurve(
         line_config='string',
@@ -98,14 +112,14 @@ def test_line_config_is_not_dict():
 @raises(ValueError)
 def test_line_config_is_missing_name():
     PlotLearningCurve(
-        line_config={ 'test': { 'color': 'red' } },
+        line_config={ 'train': { 'color': 'red' } },
         display_fn=display_replacer([])
     )
 
 @raises(ValueError)
 def test_line_config_is_missing_color():
     PlotLearningCurve(
-        line_config={ 'test': { 'name': 'name' } },
+        line_config={ 'train': { 'name': 'name' } },
         display_fn=display_replacer([])
     )
 

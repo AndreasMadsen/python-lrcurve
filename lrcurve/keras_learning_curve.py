@@ -19,111 +19,114 @@ class KerasLearningCurve(keras.callbacks.Callback):
                   verbose=0)
 
     Arguments:
-        metric_mapping: dict that maps metric names to plot facet and
-            line. For example:
-                metric_mapping = {
-                    'loss': { 'facet': 'loss', 'line': 'train' },
-                    'val_loss': { 'facet': 'loss', 'line': 'validation' },
-               }
-            default is `None`, meaning it is infered from the keras model
-            configuration.
         draw_every: Only update the plot every `draw_interval` epoch. This
             can be useful on a remote connection, where data transfer between
             server and client might be slow.
         **kwargs: forwarded to PlotLearningCurve, the defaults
-            are infered from the keras model configuration.
+            are infered from the keras model configuration, or mappings
+            if mappings is defined.
     """
-    def __init__(self, metric_mapping = None, draw_interval=1, **kwargs):
-        # argument assertion
-        if metric_mapping is not None:
-            if not isinstance(metric_mapping, dict):
-                raise ValueError('line_config must be a dict')
-            for metric_key, metric_description in metric_mapping.items():
-                if 'facet' not in metric_description or not isinstance(metric_description['facet'], str):
-                    raise ValueError(f'metric_description["{metric_key}"]["facet"] must a string')
-                if 'line' not in metric_description or not isinstance(metric_description['line'], str):
-                    raise ValueError(f'metric_description["{metric_key}"]["line"] must a string')
-
+    def __init__(self, draw_interval=1, **kwargs):
         if not isinstance(draw_interval, int) or draw_interval <= 0:
             raise ValueError('draw_interval must be a positive integer')
 
         self._draw_interval = draw_interval
-        self._metric_mapping = metric_mapping
-        self._facet_keys = None
-
         self._kwargs = kwargs
+
+        self._observed_metrics = set()
+        self._dynamic = True
         self._plotter = None
 
-    def _setup_plotter(self, metrics_names):
-        do_validation = False
+        if 'mappings' in self._kwargs:
+            self._dynamic = False
+            self._initialize_plotter()
 
-        # Set the metric mapping, if not specified
-        if self._metric_mapping is None:
-            self._metric_mapping = {}
-            for metric_name in metrics_names:
-                if metric_name.startswith('val_'):
-                    do_validation = True
-                    self._metric_mapping[metric_name] = {
-                        'facet': metric_name[4:],
-                        'line': 'validation'
-                    }
-                else:
-                    self._metric_mapping[metric_name] = {
-                        'facet': metric_name,
-                        'line': 'train'
-                    }
-
-        # pre-compute facet_keys
-        self._facet_keys = list(set(
-            metric_assigment['facet'] for metric_assigment in self._metric_mapping.values()
-        ))
-
+    def _infer_settings(self,
+                        mappings=None,
+                        line_config=None,
+                        facet_config=None,
+                        xaxis_config=None,
+                        **kwargs):
         # Dynamically set max_epoch, if not specified
-        if 'xaxis_config' not in self._kwargs or self._kwargs['xaxis_config'] is None:
-            self._kwargs['xaxis_config'] = { 'name': 'Epoch', 'limit': [0, None] }
-        if 'limit' not in self._kwargs['xaxis_config']:
-            self._kwargs['xaxis_config']['limit'] = [0, None]
-        if self._kwargs['xaxis_config']['limit'][1] is None:
-            self._kwargs['xaxis_config']['limit'][1] = self.params['epochs'] - 1
+        if xaxis_config is None:
+            xaxis_config = dict()
+        if 'name' not in xaxis_config:
+            xaxis_config['name'] = 'Epoch'
+        if 'limit' not in xaxis_config:
+            xaxis_config['limit'] = [0, None]
+        if xaxis_config['limit'][1] is None:
+            xaxis_config['limit'][1] = self.params['epochs'] - 1
 
-        # set the line_config, if not specified
-        if 'line_config' not in self._kwargs or self._kwargs['line_config'] is None:
-            self._kwargs['line_config'] = {
-                'train': { 'name': 'Train', 'color': '#F8766D' }
-            }
-            if do_validation:
-                self._kwargs['line_config']['validation'] = \
-                    {'name': 'Validation', 'color': '#00BFC4' }
+        # Dynamically infer mappings
+        if mappings is None:
+            mappings = { key:dict() for key in self._observed_metrics }
+        for mapping_key, mapping_def in mappings.items():
+            infered_facet, infered_line = (mapping_key, 'train')
+            if mapping_key.startswith('val_'):
+                infered_facet, infered_line = (mapping_key[4:], 'validation')
 
-        # set the facet_config, if not specified
-        if 'facet_config' not in self._kwargs or self._kwargs['facet_config'] is None:
-            self._kwargs['facet_config'] = {}
-            for facet_name in self._facet_keys:
-                if facet_name == 'loss':
-                    self._kwargs['facet_config'][facet_name] = \
-                        { 'name': 'loss', 'limit': [0, None] }
-                elif facet_name == 'sparse_categorical_accuracy':
-                    self._kwargs['facet_config'][facet_name] = \
-                        { 'name': 'accuracy', 'limit': [0, 1] }
-                else:
-                    self._kwargs['facet_config'][facet_name] = \
-                        { 'name': facet_name, 'limit': [None, None] }
+            if 'line' not in mapping_def:
+                mapping_def['line'] = infered_line
+            if 'facet' not in mapping_def:
+                mapping_def['facet'] = infered_facet
 
-        # Create plotter
-        self._plotter = PlotLearningCurve(**self._kwargs)
+        # Dynamically infer line_config
+        if line_config is None:
+            line_config = { mapping_def['line']:dict() for mapping_def in mappings.values() }
+        for line_key, line_def in line_config.items():
+            if line_key == 'train':
+                infered_name, infered_color = ('Train', '#F8766D')
+            elif line_key == 'validation':
+                infered_name, infered_color = ('Validation', '#00BFC4')
+            else:
+                infered_name, infered_color = (line_key, '#333333')
+
+            if 'name' not in line_def:
+                line_def['name'] = infered_name
+            if 'color' not in line_def:
+                line_def['color'] = infered_color
+
+        # Dynamically infer facet_config
+        if facet_config is None:
+            facet_config = { mapping_def['facet']:dict() for mapping_def in mappings.values() }
+        for facet_key, facet_def in facet_config.items():
+            if facet_key == 'loss':
+                infered_name, infered_limit = ('Loss', [0, None])
+            elif facet_key in {'acc', 'accuracy', 'binary_accuracy', 'categorical_accuracy', 'sparse_categorical_accuracy'}:
+                infered_name, infered_limit = ('Accuracy', [0, 1])
+            elif facet_key == 'lr':
+                infered_name, infered_limit = ('Learning Rate', [0, None])
+            else:
+                infered_name, infered_limit = (facet_key, [None, None])
+
+            if 'name' not in facet_def:
+                facet_def['name'] = infered_name
+            if 'limit' not in facet_def:
+                facet_def['limit'] = infered_limit
+
+        return {
+            'mappings': mappings,
+            'line_config': line_config,
+            'facet_config': facet_config,
+            'xaxis_config': xaxis_config,
+            **kwargs
+        }
+
+    def _initialize_plotter(self):
+        settings = self._infer_settings(**self._kwargs)
+        if self._plotter is None:
+            self._plotter = PlotLearningCurve(**settings)
+        else:
+            self._plotter.reconfigure(**settings)
 
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
 
-        if self._plotter is None:
-            self._setup_plotter(logs.keys())
+        if self._dynamic and len(logs.keys() - self._observed_metrics) > 0:
+            self._observed_metrics.update(logs.keys())
+            self._initialize_plotter()
 
-        # restructure logs data to nested dicts and append
-        row = { facet_key: dict() for facet_key in self._facet_keys }
-        for metric_name, metric_assigment in self._metric_mapping.items():
-            metric_value = float(logs[metric_name]) if metric_name in logs else float('nan')
-            row[metric_assigment['facet']][metric_assigment['line']] = metric_value
-        self._plotter.append(epoch, row)
+        self._plotter.append(epoch, logs)
 
         # Update plot
         if epoch % self._draw_interval == 0:

@@ -14,6 +14,47 @@ def _valid_limit(limit):
         (limit[1] is None or isinstance(limit[1], (float, int)))
     )
 
+def validate_settings(height, width, mappings, line_config, facet_config, xaxis_config):
+    # arguments assertion
+    if not isinstance(height, int) or height <= 0:
+        raise ValueError(f'height must be a positive number or None, was {height}')
+
+    if not isinstance(width, int) or width <= 0:
+        raise ValueError(f'width must be a positive number, was {width}')
+
+    if not isinstance(line_config, dict):
+        raise ValueError('line_config must be a dict')
+    for line_key, line_def in line_config.items():
+        if 'name' not in line_def or not isinstance(line_def['name'], str):
+            raise ValueError(f'line_config["{line_key}"]["name"] must a string')
+        if 'color' not in line_def or not isinstance(line_def['color'], str):
+            raise ValueError(f'line_config["{line_key}"]["color"] must a string')
+
+    if not isinstance(facet_config, dict):
+        raise ValueError('line_config must be a dict')
+    for facet_key, facet_def in facet_config.items():
+        if 'name' not in facet_def or not isinstance(facet_def['name'], str):
+            raise ValueError(f'facet_config["{facet_key}"]["name"] must a string')
+        if 'limit' not in facet_def or not _valid_limit(facet_def['limit']):
+            raise ValueError(f'facet_config["{facet_key}"]["limit"] must be a list with length two')
+
+    if not isinstance(mappings, dict):
+        raise ValueError('mappings must be a dict')
+    for mapping_key, mapping_def in mappings.items():
+        if 'line' not in mapping_def or not isinstance(mapping_def['line'], str):
+            raise ValueError(f'mappings["{mapping_key}"]["line"] must a string')
+        if 'facet' not in mapping_def or not isinstance(mapping_def['facet'], str):
+            raise ValueError(f'mappings["{mapping_key}"]["facet"] must a string')
+        if mapping_def['line'] not in line_config:
+            raise ValueError(f'the mapping line {mapping_def["line"]} must exist in line_config')
+        if mapping_def['facet'] not in facet_config:
+            raise ValueError(f'the mapping facet {mapping_def["facet"]} must exist in facet_config')
+
+    if 'name' not in xaxis_config or not isinstance(xaxis_config['name'], str):
+        raise ValueError(f'xaxis_config["name"] must a string')
+    if 'limit' not in xaxis_config or not _valid_limit(xaxis_config['limit']):
+        raise ValueError(f'xaxis_config["limit"] must be a list with length two')
+
 class PlotLearningCurve:
     """Framework agnostic interface to plot learning curves.
 
@@ -40,6 +81,14 @@ class PlotLearningCurve:
             behavior is to use 200px per facet and an additional 90px for
             the x-axis and legend.
         width: The width in pixels of the plot (default 600).
+        mappings: dict describing how each data key relates to a facet and line.
+            The line and facet values, are the keys described in line_config
+            and facet_config.
+            Default is:
+                {
+                    'loss': { 'line': 'train', 'facet': 'loss' },
+                    'val_loss': { 'line': 'validation', 'facet': 'loss' }
+                }
         line_config: dict mapping line-keywords to presented name and color.
             The name is a string and the color should be CSS-SVG compatible.
             Default is:
@@ -70,59 +119,15 @@ class PlotLearningCurve:
             around that by injecting `<script>` tags instead.
     """
     def __init__(self,
-                 height = None,
-                 width = 600,
-                 line_config = {
-                     'train': { 'name': 'Train', 'color': '#F8766D' },
-                     'validation': { 'name': 'Validation', 'color': '#00BFC4' }
-                 },
-                 facet_config = {
-                     'loss': { 'name': 'loss', 'limit': [0, None] }
-                 },
-                 xaxis_config = { 'name': 'Epoch', 'limit': [0, None] },
                  display_fn=IPython.display.display,
-                 debug=False
+                 debug=False,
+                 **kwargs
     ):
-        height = len(facet_config) * 200 + 90 if height is None else height
-
-        # arguments assertion
-        if not isinstance(height, int) or height <= 0:
-            raise ValueError(f'height must be a positive number or None, was {height}')
-
-        if not isinstance(width, int) or width <= 0:
-            raise ValueError(f'width must be a positive number, was {width}')
-
-        if not isinstance(line_config, dict):
-            raise ValueError('line_config must be a dict')
-        for line_key, line_description in line_config.items():
-            if 'name' not in line_description or not isinstance(line_description['name'], str):
-                raise ValueError(f'line_config["{line_key}"]["name"] must a string')
-            if 'color' not in line_description or not isinstance(line_description['color'], str):
-                raise ValueError(f'line_config["{line_key}"]["color"] must a string')
-
-        if not isinstance(facet_config, dict):
-            raise ValueError('line_config must be a dict')
-        for facet_key, facet_description in facet_config.items():
-            if 'name' not in facet_description or not isinstance(facet_description['name'], str):
-                raise ValueError(f'facet_config["{facet_key}"]["name"] must a string')
-            if 'limit' not in facet_description or not _valid_limit(facet_description['limit']):
-                raise ValueError(f'facet_config["{facet_key}"]["limit"] must be a list with length two')
-
-        if 'name' not in xaxis_config or not isinstance(xaxis_config['name'], str):
-            raise ValueError(f'xaxis_config["name"] must a string')
-        if 'limit' not in xaxis_config or not _valid_limit(xaxis_config['limit']):
-            raise ValueError(f'xaxis_config["limit"] must be a list with length two')
-
         # Store settings
         self._debug = debug
         self._display = display_fn
         self._settings = {
-            'id': str(uuid.uuid4()),
-            'width': width,
-            'height': height,
-            'lineConfig': line_config,
-            'facetConfig': facet_config,
-            'xAxisConfig': xaxis_config
+            'id': str(uuid.uuid4())
         }
 
         # Prepear data containers
@@ -133,6 +138,41 @@ class PlotLearningCurve:
             IPython.display.Javascript('void(0);'),
             display_id=True
         )
+        self.reconfigure(**kwargs)
+
+    def reconfigure(self,
+                    height = None,
+                    width = 600,
+                    mappings = {
+                        'loss': { 'line': 'train', 'facet': 'loss' },
+                        'val_loss': { 'line': 'validation', 'facet': 'loss' }
+                    },
+                    line_config = {
+                        'train': { 'name': 'Train', 'color': '#F8766D' },
+                        'validation': { 'name': 'Validation', 'color': '#00BFC4' }
+                    },
+                    facet_config = {
+                        'loss': { 'name': 'loss', 'limit': [0, None] }
+                    },
+                    xaxis_config = { 'name': 'Epoch', 'limit': [0, None] }
+    ):
+        """Change the plot settings, after the plot have been initally drawn.
+
+        This is useful for when additional facets or lines have been discovered.
+        """
+        height = len(facet_config) * 200 + 90 if height is None else height
+        validate_settings(height, width, mappings, line_config, facet_config, xaxis_config)
+
+        self._settings.update({
+            'width': width,
+            'height': height,
+            'mappings': mappings,
+            'lineConfig': line_config,
+            'facetConfig': facet_config,
+            'xAxisConfig': xaxis_config
+        })
+
+        self._update_element.update(self._create_setup_javascript())
 
     def __enter__(self):
         return self
@@ -149,21 +189,30 @@ class PlotLearningCurve:
                 f'<script>{d3_fp.read()}</script>'
                 f'<script>{js_fp.read()}</script>'
                 f'<svg id="{self._settings["id"]}" class="learning-curve"></svg>'
+            )
+
+    def _create_setup_javascript(self):
+        if self._debug:
+            return IPython.display.HTML(
                 f'<script>'
-                f'  window.setupLearningCurve({json.dumps(self._settings)});'
+                f'  window.setupLearningCurve("{self._settings["id"]}", {json.dumps(self._settings)});'
                 f'</script>'
+            )
+        else:
+            return IPython.display.Javascript(
+                f'window.setupLearningCurve("{self._settings["id"]}", {json.dumps(self._settings)});'
             )
 
     def _create_append_javascript(self):
         if self._debug:
             return IPython.display.HTML(
                 f'<script>'
-                f'  window.appendLearningCurve({json.dumps(self._backlog)});'
+                f'  window.appendLearningCurve("{self._settings["id"]}", {json.dumps(self._backlog)});'
                 f'</script>'
             )
         else:
             return IPython.display.Javascript(
-                f'window.appendLearningCurve({json.dumps(self._backlog)});'
+                f'window.appendLearningCurve("{self._settings["id"]}", {json.dumps(self._backlog)});'
             )
 
     def append(self, x, y):
@@ -174,18 +223,12 @@ class PlotLearningCurve:
 
         Arguments:
             x: number - The x axis value, typically the epoch or iteration.
-            y: dict - The measured values for this epoch, structured as a
-                dict mapping from facet-keywords to a nested dict. The
-                nested dict maps from line-keyword to measured value.
+            y: dict - A mapping between the mappings-key and the y-axis value.
+                NOte that not all mapping-keys have to be included.
         """
-        row = {
-            'x': float(x),
-            'y': {
-                facet_key: {
-                    line_key: float(value) for line_key, value in facet_data.items()
-                } for facet_key, facet_data in y.items()
-            }
-        }
+        x = x
+        y = { key: float(value) for key, value in y.items() }
+        row = [x, y]
         self._data.append(row)
         self._backlog.append(row)
 
@@ -216,13 +259,15 @@ class PlotLearningCurve:
         if self._update_element is not None:
             self._update_element.update(
                 IPython.display.Javascript(
-                    'window.appendLearningCurve = function () {};'
+                    'window.setupLearningCurve = function (id, settings) {};'
+                    'window.appendLearningCurve = function (id, data) {};'
                 )
             )
             self._update_element.update(
                 IPython.display.HTML(
                     f'<script>'
-                    f'  window.appendLearningCurve({json.dumps(self._data)});'
+                    f'  window.setupLearningCurve("{self._settings["id"]}", {json.dumps(self._settings)});'
+                    f'  window.appendLearningCurve("{self._settings["id"]}", {json.dumps(self._data)});'
                     f'</script>'
                 )
             )

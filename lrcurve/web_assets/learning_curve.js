@@ -2,26 +2,37 @@
   'use strict';
   const d3 = window.d3;
 
-  const margin = {top: 10, right: 10, bottom: 10, left: 35};
+  const margin = {top: 10, right: 10, bottom: 10, left: 45};
   const axisMargin = { top: 10, right: 15, bottom: 10, left: 15 };
   const facetWidth = 30;
   const legendHeight = 40;
   const xAxisHeight = 30;
   const xLabelHeight = 20;
 
+  function unique(items) {
+    return Array.from(new Set(items));
+  }
+
+  function nonFiniteDefaultNull(number) {
+    return Number.isFinite(number) ? number : null;
+  }
+
   function computeLimit(original, data, lineKeys, fn) {
     let min = Infinity;
     let max = -Infinity;
 
     for (const lineKey of lineKeys) {
-      const [localMin, localMax] = d3.extent(data.get(lineKey).map(fn));
-      min = Math.min(min, localMin);
-      max = Math.max(max, localMax);
+      const storage = data.get(lineKey);
+      if (storage.length > 0) {
+        const [localMin, localMax] = d3.extent(storage.map(fn));
+        min = Math.min(min, localMin);
+        max = Math.max(max, localMax);
+      }
     }
 
     return [
-      original[0] === null ? min : original[0],
-      original[1] === null ? max : original[1]
+      original[0] === null ? nonFiniteDefaultNull(min) : original[0],
+      original[1] === null ? nonFiniteDefaultNull(max) : original[1]
     ];
   }
 
@@ -43,7 +54,7 @@
   }
 
   class SubGraph {
-    constructor({ container, id, index, height, width, drawXAxis, lineConfig, facetLabel, ylim, xlim }) {
+    constructor({ container, id, index, height, width, drawXAxis, lineKeys, lineConfig, facetLabel, ylim, xlim }) {
       this.container = container;
 
       this.graphWidth = width - facetWidth - margin.left - margin.right;
@@ -57,7 +68,7 @@
       this.ylim = ylim;
       this.dynamicYlim = this.ylim.includes(null);
 
-      this.lineKeys = Object.keys(lineConfig);
+      this.lineKeys = lineKeys;
       this.lineConfig = lineConfig;
 
       // Create graph container
@@ -238,13 +249,13 @@
   }
 
   class LearningCurvePlot {
-    constructor({ container, id, height, width, facetConfig, lineConfig, xAxisConfig }) {
-      this.facetKeys = Object.keys(facetConfig);
+    constructor({ id, height, width, mappings, facetConfig, lineConfig, xAxisConfig }) {
+      this.facetKeys = unique(Object.values(mappings).map(({line, facet}) => facet)).sort();
 
       const innerHeight = height - legendHeight - xLabelHeight - xAxisHeight;
       const subGraphHeight = innerHeight / this.facetKeys.length;
 
-      this._container = d3.select(container)
+      this._container = d3.select(document.getElementById(id))
       .classed('learning-curve', true)
       .style('height', `${height}px`)
       .style('width', `${width}px`)
@@ -256,6 +267,11 @@
       this._facets = new Map();
       for (let facetIndex = 0; facetIndex < this.facetKeys.length; facetIndex++) {
         const facetKey = this.facetKeys[facetIndex];
+        const lineKeys = unique(
+            Object.values(mappings)
+            .filter(({facet, line}) => facet === facetKey)
+            .map(({facet, line}) => line)
+        ).sort();
         this._facets.set(
           facetKey,
           new SubGraph({
@@ -268,6 +284,7 @@
 
             drawXAxis: facetIndex == this.facetKeys.length - 1,
 
+            lineKeys: lineKeys,
             lineConfig: lineConfig,
             facetLabel: facetConfig[facetKey].name,
             ylim: facetConfig[facetKey].limit,
@@ -325,7 +342,7 @@
 
     setData(data) {
       for (let facetKey of this.facetKeys) {
-        this._facets.get(facetKey).setData(data.getFacetData(facetKey));
+        this._facets.get(facetKey).setData(data.get(facetKey));
       }
     }
 
@@ -334,63 +351,98 @@
         this._facets.get(facetKey).draw();
       }
     }
+
+    remove() {
+      this._container.selectAll("*").remove();
+    }
   }
 
   // Class to accumulate and store all data
   class LearningCurveData {
-    constructor(facetLabels, lineLabels) {
-      this.facetKeys = Object.keys(facetLabels);
-      this.lineKeys = Object.keys(lineLabels);
-
+    constructor(settings) {
+      this.index = new Map();
       this.data = new Map();
-      for (const facetKey of this.facetKeys) {
-        this.data.set(facetKey, new Map());
-        for (const lineKey of this.lineKeys) {
-          this.data.get(facetKey).set(lineKey, []);
+      this.updateSettings(settings);
+    }
+
+    updateSettings (settings) {
+      for (const [key, {line, facet}] of Object.entries(settings.mappings)) {
+        if (this.data.has(key)) {
+          continue;
+        }
+
+        if (!this.index.has(facet)) {
+          this.index.set(facet, new Map());
+        }
+        if (!this.index.get(facet).has(line)) {
+          const storage = [];
+          this.index.get(facet).set(line, storage);
+          this.data.set(key, storage);
+        }
+      }
+    }
+
+    append([x, y]) {
+      for (const [key, storage] of this.data.entries()) {
+        if (Object.prototype.hasOwnProperty.call(y, key)) {
+          storage.push({
+            x: x,
+            y: y[key]
+          })
         }
       }
     }
 
     appendAll(rows) {
-      for (const facetKey of this.facetKeys) {
-        for (const lineKey of this.lineKeys) {
-          const storage = this.data.get(facetKey).get(lineKey);
-          for (const row of rows) {
-            storage.push({
-              x: row.x,
-              y: row.y[facetKey][lineKey]
-            });
-          }
-        }
+      for (const row of rows) {
+        this.append(row);
       }
     }
 
-    getFacetData(facetKey) {
-      return this.data.get(facetKey);
+    get(facet) {
+      return this.index.get(facet);
     }
   }
 
-  window.setupLearningCurve = function (settings) {
-    const data = new LearningCurveData(settings.facetConfig, settings.lineConfig);
-    const graph = new LearningCurvePlot({
-      container: document.getElementById(settings.id),
-      ...settings
-    });
-
-    let waitingForDrawing = false;
-    function drawer() {
-      waitingForDrawing = false;
-      graph.setData(data);
-      graph.draw();
+  class LearningCurveDrawScheduler {
+    constructor(settings) {
+      this.waitingForDrawing = false;
+      this.graph = new LearningCurvePlot(settings);
+      this.data = new LearningCurveData(settings);
     }
 
-    window.appendLearningCurve = function(rows) {
-      data.appendAll(rows);
+    updateSettings(settings) {
+      this.graph.remove();
+      this.graph = new LearningCurvePlot(settings);
+      this.data.updateSettings(settings);
+      this.draw();
+    }
 
-      if (!waitingForDrawing) {
-        waitingForDrawing = true;
-        window.requestAnimationFrame(drawer);
+    draw() {
+      this.waitingForDrawing = false;
+      this.graph.setData(this.data);
+      this.graph.draw();
+    }
+
+    appendAllAndUpdate(data) {
+      this.data.appendAll(data);
+
+      if (!this.waitingForDrawing) {
+        this.waitingForDrawing = true;
+        window.requestAnimationFrame(this.draw.bind(this));
       }
-    };
+    }
+  }
+
+  window.setupLearningCurve = function (id, settings) {
+    if (document.getElementById(id).instance) {
+      document.getElementById(id).instance.updateSettings(settings);
+    } else {
+      document.getElementById(id).instance = new LearningCurveDrawScheduler(settings);
+    }
+  };
+
+  window.appendLearningCurve = function (id, data) {
+    document.getElementById(id).instance.appendAllAndUpdate(data);
   };
 })();
