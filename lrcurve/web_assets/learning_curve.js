@@ -54,7 +54,7 @@
   }
 
   class SubGraph {
-    constructor({ container, id, index, height, width, drawXAxis, lineKeys, lineConfig, facetLabel, ylim, xlim }) {
+    constructor({ container, id, index, height, width, drawXAxis, lineKeys, lineConfig, facetLabel, yscale, ylim, xlim }) {
       this.container = container;
 
       this.graphWidth = width - facetWidth - margin.left - margin.right;
@@ -106,7 +106,7 @@
       this.xScale = d3.scaleLinear()
         .range([0, this.axisWidth]);
 
-      this.yScale = d3.scaleLinear()
+      this.yScale = (yscale === 'log10' ? d3.scaleLog() : d3.scaleLinear())
         .range([this.axisHeight, 0]);
 
       // compute tick marks
@@ -287,6 +287,7 @@
             lineKeys: lineKeys,
             lineConfig: lineConfig,
             facetLabel: facetConfig[facetKey].name,
+            yscale: facetConfig[facetKey].scale,
             ylim: facetConfig[facetKey].limit,
             xlim: xAxisConfig.limit
           })

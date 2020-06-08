@@ -37,6 +37,10 @@ def validate_settings(height, width, mappings, line_config, facet_config, xaxis_
             raise ValueError(f'facet_config["{facet_key}"]["name"] must a string')
         if 'limit' not in facet_def or not _valid_limit(facet_def['limit']):
             raise ValueError(f'facet_config["{facet_key}"]["limit"] must be a list with length two')
+        if 'scale' not in facet_def or not isinstance(facet_def['scale'], str):
+            raise ValueError(f'facet_config["{facet_key}"]["scale"] must a string')
+        if facet_def['scale'] not in {'log10', 'linear'}:
+            raise ValueError(f'the facet scale {facet_def["scale"]} must either log10 or linear')
 
     if not isinstance(mappings, dict):
         raise ValueError('mappings must be a dict')
@@ -102,7 +106,7 @@ class PlotLearningCurve:
             dynamically change.
             Default is:
                 {
-                    'loss': { 'name': 'loss', 'limit': [0, None] }
+                    'loss': { 'name': 'loss', 'limit': [None, None], 'scale': 'log10' }
                 }
         xaxis_config: dict describing the presented name and x-axis limit. The name
             is a string, and the limit is an array `[xmin, xmax]`.
@@ -152,7 +156,7 @@ class PlotLearningCurve:
                         'validation': { 'name': 'Validation', 'color': '#00BFC4' }
                     },
                     facet_config = {
-                        'loss': { 'name': 'loss', 'limit': [0, None] }
+                        'loss': { 'name': 'loss', 'limit': [None, None], 'scale': 'log10' }
                     },
                     xaxis_config = { 'name': 'Epoch', 'limit': [0, None] }
     ):

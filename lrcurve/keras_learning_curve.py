@@ -91,18 +91,20 @@ class KerasLearningCurve(keras.callbacks.Callback):
             facet_config = { mapping_def['facet']:dict() for mapping_def in mappings.values() }
         for facet_key, facet_def in facet_config.items():
             if facet_key == 'loss':
-                infered_name, infered_limit = ('Loss', [0, None])
+                infered_name, infered_limit, infered_scale = ('Loss', [None, None], 'log10')
             elif facet_key in {'acc', 'accuracy', 'binary_accuracy', 'categorical_accuracy', 'sparse_categorical_accuracy'}:
-                infered_name, infered_limit = ('Accuracy', [0, 1])
+                infered_name, infered_limit, infered_scale = ('Accuracy', [0, 1], 'linear')
             elif facet_key == 'lr':
-                infered_name, infered_limit = ('Learning Rate', [0, None])
+                infered_name, infered_limit, infered_scale = ('Learning Rate', [0, None], 'linear')
             else:
-                infered_name, infered_limit = (facet_key, [None, None])
+                infered_name, infered_limit, infered_scale = (facet_key, [None, None], 'linear')
 
             if 'name' not in facet_def:
                 facet_def['name'] = infered_name
             if 'limit' not in facet_def:
                 facet_def['limit'] = infered_limit
+            if 'scale' not in facet_def:
+                facet_def['scale'] = infered_scale
 
         return {
             'mappings': mappings,

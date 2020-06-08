@@ -78,8 +78,8 @@ plot = PlotLearningCurve(
         'val_acc': { 'line': 'validation', 'facet': 'acc' }
     },
     facet_config = {
-        'loss': { 'name': 'Cross-Entropy', 'limit': [0, None] },
-        'acc': { 'name': 'Accuracy', 'limit': [0, 1] }
+        'loss': { 'name': 'Cross-Entropy', 'limit': [0, None], 'scale': 'linear' },
+        'acc': { 'name': 'Accuracy', 'limit': [0, 1], 'scale': 'linear' }
     },
     xaxis_config = { 'name': 'Epoch', 'limit': [0, 500] }
 )
