@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<title>Debug lrcurve</title>
+<link href="lrcurve/web_assets/learning_curve.css" rel="stylesheet">
+<script src="lrcurve/web_assets/d3.bundle.js"></script>
+<script src="lrcurve/web_assets/learning_curve.js"></script>
+
+<svg id="lrcurve-id" class="learning-curve"></svg>
+
+<script>
+    const configStart = {
+        'id': 'lrcurve-id',
+        'width': 600,
+        'height': 490,
+        'mappings': {
+            'lr': { 'line': 'lr', 'facet': 'parameter' },
+            'loss': { 'line': 'train', 'facet': 'loss' },
+            'accuracy': { 'line': 'train', 'facet': 'accuracy' },
+        },
+        'lineConfig': {
+            'lr': { 'name': 'Learning Rate', 'color': '#333333' },
+            'train': { 'name': 'Train', 'color': '#F8766D' }
+        },
+        'facetConfig': {
+            'parameter': { 'name': 'Parameters', 'limit': [null, null] },
+            'loss': { 'name': 'Loss', 'limit': [0, null] },
+            'accuracy': { 'name': 'Accuracy', 'limit': [0, 1] }
+        },
+        'xAxisConfig': { 'name': 'Epoch', 'limit': [0, null] }
+    };
+
+    const configWithValidation = {
+        'id': 'lrcurve-id',
+        'width': 600,
+        'height': 490,
+        'mappings': {
+            'lr': { 'line': 'lr', 'facet': 'parameter' },
+            'loss': { 'line': 'train', 'facet': 'loss' },
+            'val_loss': { 'line': 'validation', 'facet': 'loss' },
+            'accuracy': { 'line': 'train', 'facet': 'accuracy' },
+            'val_accuracy': { 'line': 'validation', 'facet': 'accuracy' }
+        },
+        'lineConfig': {
+            'lr': { 'name': 'Learning Rate', 'color': '#333333' },
+            'train': { 'name': 'Train', 'color': '#F8766D' },
+            'validation': { 'name': 'Validation', 'color': '#00BFC4' }
+        },
+        'facetConfig': {
+            'parameter': { 'name': 'Parameters', 'limit': [null, null] },
+            'loss': { 'name': 'Loss', 'limit': [0, null] },
+            'accuracy': { 'name': 'Accuracy', 'limit': [0, 1] }
+        },
+        'xAxisConfig': { 'name': 'Epoch', 'limit': [0, null] }
+    };
+
+    window.setupLearningCurve('lrcurve-id', configStart);
+
+    function update (i) {
+        if (i % 10 == 0 && i !== 0) {
+            if (i == 10) {
+                window.setupLearningCurve('lrcurve-id', configWithValidation);
+            }
+
+            window.appendLearningCurve('lrcurve-id', [[i, {
+                'loss': Math.exp(-(i+10)/10) + 1,
+                'val_loss': Math.exp(-i/10) + 1,
+                'accuracy': 1 - Math.exp(-(i+10)/10),
+                'val_accuracy': 1 - Math.exp(-i/10),
+                'lr': 1 - 0.005 * i
+            }]]);
+        } else if (i < 10) {
+            window.appendLearningCurve('lrcurve-id', [[i, {
+                'loss': Math.exp(-(i+10)/10) + 1,
+                'accuracy': 1 - Math.exp(-(i+10)/10)
+            }]]);
+        } else {
+            window.appendLearningCurve('lrcurve-id', [[i, {
+                'loss': Math.exp(-(i+10)/10) + 1,
+                'accuracy': 1 - Math.exp(-(i+10)/10),
+                'lr': 1 - 0.005 * i
+            }]]);
+        }
+
+        if (i < 60) setTimeout(update.bind(null, i + 1), 100);
+    }
+
+    setTimeout(update.bind(null, 0), 100);
+</script>
