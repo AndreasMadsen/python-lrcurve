@@ -55,10 +55,8 @@ model.fit(train.x, train.y,
 with PlotLearningCurve() as plot:
     for i in range(100):
         plot.append(i, {
-            'loss': {
-                'train': math.exp(-(i+1)/10),
-                'validation': math.exp(-i/10)
-            }
+            'loss': math.exp(-(i+1)/10),
+            'val_loss': math.exp(-i/10)
         })
         plot.draw()
         time.sleep(0.1)
@@ -73,9 +71,15 @@ with PlotLearningCurve() as plot:
 from lrcurve import PlotLearningCurve
 
 plot = PlotLearningCurve(
+    mappings = {
+        'loss': { 'line': 'train', 'facet': 'loss' },
+        'val_loss': { 'line': 'validation', 'facet': 'loss' },
+        'acc': { 'line': 'train', 'facet': 'acc' },
+        'val_acc': { 'line': 'validation', 'facet': 'acc' }
+    },
     facet_config = {
         'loss': { 'name': 'Cross-Entropy', 'limit': [0, None] },
-        'accuracy': { 'name': 'Accuracy', 'limit': [0, 1] }
+        'acc': { 'name': 'Accuracy', 'limit': [0, 1] }
     },
     xaxis_config = { 'name': 'Epoch', 'limit': [0, 500] }
 )
@@ -99,14 +103,10 @@ with plot:
 
         # append and update
         plot.append(epoch, {
-            'loss': {
-                'train': loss_train,
-                'validation': loss_test
-            },
-            'accuracy': {
-                'train': accuacy_train,
-                'validation': accuacy_test
-            }
+            'loss': loss_train,
+            'val_loss': loss_test,
+            'acc': accuacy_train,
+            'val_acc': accuacy_test
         })
         plot.draw()
 ```
