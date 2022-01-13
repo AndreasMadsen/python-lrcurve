@@ -176,7 +176,12 @@ class PlotLearningCurve:
             'xAxisConfig': xaxis_config
         })
 
-        self._update_element.update(self._create_setup_javascript())
+        disp = self._create_setup_javascript()
+        # A bug in Google Colab means that sometimes the .update() doesn't get executed at all
+        # if the iframe is not properly initialized yet. Unfortunately, I can't find a way
+        # to probe if the initialization is complete. Instead, add a 1 second delay.
+        time.sleep(1)
+        self._update_element.update(disp)
 
     def __enter__(self):
         return self
