@@ -226,9 +226,9 @@ class PlotLearningCurve:
             )
 
     def append(self, x, y):
-        """Appends graph data without updateing the figure.
+        """Appends graph data without updating the figure.
 
-        It can be useful to append several data-points before updateing the
+        It can be useful to append several data-points before updating the
         figure with `.draw()`.
 
         Arguments:
